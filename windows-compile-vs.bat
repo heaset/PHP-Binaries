@@ -2,7 +2,8 @@
 
 REM For future users: This file MUST have CRLF line endings. If it doesn't, lots of inexplicable undesirable strange behaviour will result.
 REM Also: Don't modify this version with sed, or it will screw up your line endings.
-set PHP_MAJOR_VER=8.1
+set PHP_MAJOR_VER=8.0
+PM_VERSION_MAJOR=4
 set PHP_VER=%PHP_MAJOR_VER%.21
 set PHP_GIT_REV=php-%PHP_VER%
 set PHP_DISPLAY_VER=%PHP_VER%
@@ -236,6 +237,8 @@ call :get-extension-zip-from-github "libdeflate"            "%PHP_LIBDEFLATE_VER
 call :get-extension-zip-from-github "xxhash"                "%PHP_XXHASH_VER%"                "pmmp"     "ext-xxhash"              || exit 1
 call :get-extension-zip-from-github "xdebug"                "%PHP_XDEBUG_VER%"                "xdebug"   "xdebug"                  || exit 1
 call :get-extension-zip-from-github "arraydebug"            "%PHP_ARRAYDEBUG_VER%"            "pmmp"     "ext-arraydebug"          || exit 1
+call :get-extension-zip-from-github "streamfd"              "master"                          "ComorDev" "streamfd"                || exit 1
+call :get-extension-zip-from-github "parallel"              "develop"                         "krakjoe"  "parallel"                || exit 1
 
 call :pm-echo " - crypto: downloading %PHP_CRYPTO_VER%..."
 git clone https://github.com/bukka/php-crypto.git crypto >>"%log_file%" 2>&1 || exit 1
@@ -263,6 +266,8 @@ call configure^
  --enable-cli^
  --enable-zts^
  --enable-pdo^
+ --enable-parallel^
+ --enable-streamfd^
  --enable-arraydebug=shared^
  --enable-bcmath^
  --enable-calendar^
