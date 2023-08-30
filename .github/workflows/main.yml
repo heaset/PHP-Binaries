@@ -40,7 +40,7 @@ jobs:
           # Used "set -ex" instead of hashbang since script isn't executed with hashbang
           set -ex
           trap "exit 1" ERR
-          ./compile.sh -t linux64 -j 4 -g -D
+          ./compile.sh -t linux64 -j 4 -g
 
       - name: Create tarball
         run: |
