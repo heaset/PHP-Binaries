@@ -38,6 +38,7 @@ set PHP_LIBDEFLATE_VER=0.2.1
 set PHP_XXHASH_VER=0.2.0
 set PHP_XDEBUG_VER=3.2.2
 set PHP_ARRAYDEBUG_VER=0.1.0
+set PHP_PARALLEL_DIR=%CD%\parallel
 
 set script_path=%~dp0
 set log_file=%script_path%compile.log
@@ -191,6 +192,27 @@ call :pm-echo "Installing files..."
 msbuild INSTALL.vcxproj /p:Configuration=%MSBUILD_CONFIGURATION% >>"%log_file%" 2>&1 || exit 1
 copy %MSBUILD_CONFIGURATION%\leveldb.pdb "%DEPS_DIR%\bin\leveldb.pdb" >>"%log_file%" 2>&1 || exit 1
 
+cd /D "%DEPS_DIR%"
+
+call :pm-echo "Downloading krakjoe/parallel"
+git clone https://github.com/krakjoe/parallel.git || exit 1
+cd /D parallel
+
+call :pm-echo "Configuring PHP extension..."
+phpize >>"%log_file%" 2>&1 || exit 1
+./configure --enable-parallel [--enable-parallel-coverage] [--enable-parallel-dev] >>"%log_file%" 2>&1 || exit 1
+
+call :pm-echo "Compiling PHP extension..."
+make >>"%log_file%" 2>&1 || exit 1
+
+call :pm-echo "Running tests..."
+make test >>"%log_file%" 2>&1 || exit 1
+
+call :pm-echo "Installing PHP extension..."
+make install >>"%log_file%" 2>&1 || exit 1
+
+copy php_parallel.dll "%DEPS_DIR%\bin\php_parallel.dll" >>"%log_file%" 2>&1 || exit 1
+copy php_parallel.pdb "%DEPS_DIR%\bin\php_parallel.dll" >>"%log_file%" 2>&1 || exit 1
 cd /D "%DEPS_DIR%"
 
 call :pm-echo "Downloading libdeflate version %LIBDEFLATE_VER%..."
