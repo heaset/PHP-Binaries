@@ -78,7 +78,7 @@ if "%PM_VERSION_MAJOR%"=="" (
     exit 1
 )
 
-call :pm-echo "Compiling with configuration for PocketMine-MP %PM_VERSION_MAJOR%"
+call :pm-echo "Compiling with configuration  for PocketMine-MP %PM_VERSION_MAJOR%"
 
 if "%SOURCES_PATH%"=="" (
 	if "%PHP_DEBUG_BUILD%"=="0" (
