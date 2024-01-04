@@ -243,7 +243,6 @@ call :get-extension-zip-from-github "encoding"              "%PHP_ENCODING_VER%"
 
 call :get-extension-zip-from-github "parallel" "%PHP_PARALLEL_VER%" "krakjoe" "parallel" || exit 1
 cd /D ext-parallel
-phpize
 call configure --enable-parallel --with-php-config="%SOURCES_PATH%\php-src\%ARCH%\%OUT_PATH_REL%_TS\php-config" >>"%log_file%" 2>&1 || call :pm-fatal-error "Error configuring parallel extension"
 nmake >>"%log_file%" 2>&1 || call :pm-fatal-error "Error compiling parallel extension"
 copy %MSBUILD_CONFIGURATION%\php_parallel.pdb "%DEPS_DIR%\bin\php_parallel.pdb" >>"%log_file%" 2>&1 || exit 1
