@@ -38,7 +38,7 @@ set PHP_XXHASH_VER=0.2.0
 set PHP_XDEBUG_VER=3.3.0
 set PHP_ARRAYDEBUG_VER=0.2.0
 set PHP_ENCODING_VER=0.2.3
-set PHP_PARALLEL_VER=develop
+set PHP_PARALLEL_VER=9efc66287c5fb96d4deb069ec2dd100e2d8b1e0b
 
 set script_path=%~dp0
 set log_file=%script_path%compile.log
@@ -241,7 +241,7 @@ call :get-extension-zip-from-github "xdebug"                "%PHP_XDEBUG_VER%"  
 call :get-extension-zip-from-github "arraydebug"            "%PHP_ARRAYDEBUG_VER%"            "pmmp"     "ext-arraydebug"          || exit 1
 call :get-extension-zip-from-github "encoding"              "%PHP_ENCODING_VER%"              "pmmp"     "ext-encoding"            || exit 1
 
-call :get-extension-zip-from-github "parallel" "%PHP_PARALLEL_VER%" "krakjoe" "ext-parallel" || exit 1
+call :get-extension-zip-from-github "parallel" "%PHP_PARALLEL_VER%" "krakjoe" "parallel" || exit 1
 cd /D ext-parallel
 phpize
 call configure --enable-parallel --with-php-config="%SOURCES_PATH%\php-src\%ARCH%\%OUT_PATH_REL%_TS\php-config" >>"%log_file%" 2>&1 || call :pm-fatal-error "Error configuring parallel extension"
