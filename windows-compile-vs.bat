@@ -3,16 +3,15 @@
 REM For future users: This file MUST have CRLF line endings. If it doesn't, lots of inexplicable undesirable strange behaviour will result.
 REM Also: Don't modify this version with sed, or it will screw up your line endings.
 set PHP_MAJOR_VER=8.0
-set PM_VERSION_MAJOR=4
-set PHP_VER=%PHP_MAJOR_VER%.21
+set PHP_VER=%PHP_MAJOR_VER%.13
 set PHP_GIT_REV=php-%PHP_VER%
 set PHP_DISPLAY_VER=%PHP_VER%
+set PM_VERSION_MAJOR=4
 set PHP_SDK_VER=2.2.0
 set PATH=C:\Program Files\7-Zip;C:\Program Files (x86)\GnuWin32\bin;%PATH%
 set VC_VER=vs16
 set ARCH=x64
-set VS_VER=
-set VS_YEAR=
+set VS_PATH=
 set CMAKE_TARGET=
 if "%PHP_DEBUG_BUILD%"=="" (
 	set PHP_DEBUG_BUILD=0
@@ -23,28 +22,29 @@ set PHP_JIT_ENABLE_ARG=off
 set LIBYAML_VER=0.2.5
 set PTHREAD_W32_VER=3.0.0
 set LEVELDB_MCPE_VER=1c7564468b41610da4f498430e795ca4de0931ff
-set LIBDEFLATE_VER=495fee110ebb48a5eb63b75fd67e42b2955871e2
+set LIBDEFLATE_VER=dd12ff2b36d603dbb7fa8838fe7e7176fcbd4f6f
 
-set PHP_PTHREADS_VER=4.2.1
-set PHP_PMMPTHREAD_VER=6.0.5
+set PHP_PTHREADS_VER=4.2.2
+set PHP_PMMPTHREAD_VER=6.0.12
 set PHP_YAML_VER=2.2.3
 set PHP_CHUNKUTILS2_VER=0.3.5
-set PHP_IGBINARY_VER=3.2.14
+set PHP_IGBINARY_VER=3.2.15
 set PHP_LEVELDB_VER=317fdcd8415e1566fc2835ce2bdb8e19b890f9f3
 set PHP_CRYPTO_VER=0.3.2
 set PHP_RECURSIONGUARD_VER=0.1.0
 set PHP_MORTON_VER=0.1.2
 set PHP_LIBDEFLATE_VER=0.2.1
 set PHP_XXHASH_VER=0.2.0
-set PHP_XDEBUG_VER=3.2.2
-set PHP_ARRAYDEBUG_VER=0.1.0
-set PHP_PARALLEL_DIR=%CD%\parallel
+set PHP_XDEBUG_VER=3.3.0
+set PHP_ARRAYDEBUG_VER=0.2.0
+set PHP_ENCODING_VER=0.2.3
+set PHP_PARALLEL_VER=develop
 
 set script_path=%~dp0
 set log_file=%script_path%compile.log
 echo.>"%log_file%"
 
-set outpath="%cd%"
+set "outpath=%cd%"
 
 where git >nul 2>nul || (call :pm-echo-error "git is required" & exit 1)
 where cmake >nul 2>nul || (call :pm-echo-error "cmake is required" & exit 1)
@@ -79,7 +79,7 @@ if "%PM_VERSION_MAJOR%"=="" (
     exit 1
 )
 
-call :pm-echo "Compiling with configuration  for PocketMine-MP %PM_VERSION_MAJOR%"
+call :pm-echo "Compiling with configuration for PocketMine-MP %PM_VERSION_MAJOR%"
 
 if "%SOURCES_PATH%"=="" (
 	if "%PHP_DEBUG_BUILD%"=="0" (
@@ -90,13 +90,14 @@ if "%SOURCES_PATH%"=="" (
 )
 call :pm-echo "Using path %SOURCES_PATH% for build sources"
 
-call :check-vs-exists 2019 16 || call :pm-fatal-error "Please install Visual Studio 2019"
+call :check-vs-exists 2022 17 "Program Files" || call :check-vs-exists 2019 16 "Program Files (x86)" || call :pm-fatal-error "Please install Visual Studio 2019"
 
 REM export an env var to override this if you're using something other than the community edition
 if "%VS_EDITION%"=="" (
 	set VS_EDITION=Community
 )
-call "C:\Program Files (x86)\Microsoft Visual Studio\%VS_YEAR%\%VS_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH% >>"%log_file%" 2>&1 || call :pm-fatal-error "Error initializing Visual Studio environment"
+
+call "%VS_PATH%\%VS_EDITION%\VC\Auxiliary\Build\vcvarsall.bat" %ARCH% >>"%log_file%" 2>&1 || call :pm-fatal-error "Error initializing Visual Studio environment"
 :batchfiles-are-stupid
 move "%log_file%" "%log_file%" >nul 2>nul || goto :batchfiles-are-stupid
 
@@ -124,7 +125,7 @@ call :get-zip https://github.com/php/php-src/archive/%PHP_GIT_REV%.zip || call :
 move php-src-%PHP_GIT_REV% php-src >>"%log_file%" 2>&1 || call :pm-fatal-error "Failed to move PHP source to target directory"
 
 set DEPS_DIR_NAME=deps
-set DEPS_DIR="%SOURCES_PATH%\%DEPS_DIR_NAME%"
+set "DEPS_DIR=%SOURCES_PATH%\%DEPS_DIR_NAME%"
 
 call :pm-echo "Downloading PHP dependencies into %DEPS_DIR%..."
 call bin\phpsdk_deps.bat -u -t %VC_VER% -b %PHP_MAJOR_VER% -a %ARCH% -f -d %DEPS_DIR_NAME% >>"%log_file%" 2>&1 || exit 1
@@ -194,27 +195,6 @@ copy %MSBUILD_CONFIGURATION%\leveldb.pdb "%DEPS_DIR%\bin\leveldb.pdb" >>"%log_fi
 
 cd /D "%DEPS_DIR%"
 
-call :pm-echo "Downloading krakjoe/parallel"
-git clone https://github.com/krakjoe/parallel.git || exit 1
-cd /D parallel
-
-call :pm-echo "Configuring PHP extension..."
-phpize >>"%log_file%" 2>&1 || exit 1
-./configure --enable-parallel [--enable-parallel-coverage] [--enable-parallel-dev] >>"%log_file%" 2>&1 || exit 1
-
-call :pm-echo "Compiling PHP extension..."
-make >>"%log_file%" 2>&1 || exit 1
-
-call :pm-echo "Running tests..."
-make test >>"%log_file%" 2>&1 || exit 1
-
-call :pm-echo "Installing PHP extension..."
-make install >>"%log_file%" 2>&1 || exit 1
-
-copy php_parallel.dll "%DEPS_DIR%\bin\php_parallel.dll" >>"%log_file%" 2>&1 || exit 1
-copy php_parallel.pdb "%DEPS_DIR%\bin\php_parallel.dll" >>"%log_file%" 2>&1 || exit 1
-cd /D "%DEPS_DIR%"
-
 call :pm-echo "Downloading libdeflate version %LIBDEFLATE_VER%..."
 call :get-zip https://github.com/ebiggers/libdeflate/archive/%LIBDEFLATE_VER%.zip || exit 1
 move libdeflate-%LIBDEFLATE_VER% libdeflate >>"%log_file%" 2>&1
@@ -259,8 +239,16 @@ call :get-extension-zip-from-github "libdeflate"            "%PHP_LIBDEFLATE_VER
 call :get-extension-zip-from-github "xxhash"                "%PHP_XXHASH_VER%"                "pmmp"     "ext-xxhash"              || exit 1
 call :get-extension-zip-from-github "xdebug"                "%PHP_XDEBUG_VER%"                "xdebug"   "xdebug"                  || exit 1
 call :get-extension-zip-from-github "arraydebug"            "%PHP_ARRAYDEBUG_VER%"            "pmmp"     "ext-arraydebug"          || exit 1
-call :get-extension-zip-from-github "streamfd"              "master"                          "ComorDev" "streamfd"                || exit 1
-call :get-extension-zip-from-github "parallel"              "develop"                         "krakjoe"  "parallel"                || exit 1
+call :get-extension-zip-from-github "encoding"              "%PHP_ENCODING_VER%"              "pmmp"     "ext-encoding"            || exit 1
+
+call :get-extension-zip-from-github "parallel" "%PHP_PARALLEL_VER%" "krakjoe" "ext-parallel" || exit 1
+cd /D ext-parallel
+phpize
+call configure --enable-parallel --with-php-config="%SOURCES_PATH%\php-src\%ARCH%\%OUT_PATH_REL%_TS\php-config" >>"%log_file%" 2>&1 || call :pm-fatal-error "Error configuring parallel extension"
+nmake >>"%log_file%" 2>&1 || call :pm-fatal-error "Error compiling parallel extension"
+copy %MSBUILD_CONFIGURATION%\php_parallel.pdb "%DEPS_DIR%\bin\php_parallel.pdb" >>"%log_file%" 2>&1 || exit 1
+copy php_parallel.dll "%DEPS_DIR%\bin\php_parallel.dll" >>"%log_file%" 2>&1 || exit 1
+cd /D ..
 
 call :pm-echo " - crypto: downloading %PHP_CRYPTO_VER%..."
 git clone https://github.com/bukka/php-crypto.git crypto >>"%log_file%" 2>&1 || exit 1
@@ -288,14 +276,13 @@ call configure^
  --enable-cli^
  --enable-zts^
  --enable-pdo^
- --enable-parallel^
- --enable-streamfd^
  --enable-arraydebug=shared^
  --enable-bcmath^
  --enable-calendar^
  --enable-chunkutils2=shared^
  --enable-com-dotnet^
  --enable-ctype^
+ --enable-encoding=shared^
  --enable-fileinfo=shared^
  --enable-filter^
  --enable-hash^
@@ -390,7 +377,6 @@ if "%PM_VERSION_MAJOR%" geq "5" (
 (echo opcache.file_update_protection=0)>>"%php_ini%"
 (echo opcache.optimization_level=0x7FFEBFFF)>>"%php_ini%"
 (echo opcache.cache_id=PHP_BINARY ;prevent sharing SHM between different binaries - they won't work because of ASLR)>>"%php_ini%"
-(echo ;Optional extensions, supplied for PM3 use)>>"%php_ini%"
 (echo ;Optional extensions, supplied for plugin use)>>"%php_ini%"
 (echo extension=php_fileinfo.dll)>>"%php_ini%"
 (echo extension=php_gd.dll)>>"%php_ini%"
@@ -418,6 +404,8 @@ if "%PHP_JIT_ENABLE_ARG%"=="on" (
 (echo xdebug.profiler_output_name=cachegrind.%%s.%%p.%%r)>>"%php_ini%"
 (echo xdebug.gc_stats_output_name=gcstats.%%s.%%p.%%r)>>"%php_ini%"
 (echo xdebug.trace_output_name=trace.%%s.%%p.%%r)>>"%php_ini%"
+(echo ;Optional experimental extensions)>>"%php_ini%"
+(echo extension=php_encoding.dll)>>"%php_ini%"
 
 call :pm-echo "Xdebug is included, but disabled by default. To enable it, change 'xdebug.mode' in your php.ini file."
 
@@ -446,16 +434,15 @@ call :pm-echo "Done?"
 exit 0
 
 :check-vs-exists
-if exist "C:\Program Files (x86)\Microsoft Visual Studio\%~1" (
-    set VS_VER=%~2
-    set VS_YEAR=%~1
+set "VS_PATH=C:\%~3\Microsoft Visual Studio\%~1"
+if exist "%VS_PATH%" (
     set CMAKE_TARGET=Visual Studio %~2 %~1
-    call :pm-echo "Found Visual Studio %~1"
+    call :pm-echo "Found Visual Studio %~1 in %VS_PATH%"
     exit /B 0
 ) else (
     call :pm-echo "DID NOT FIND VS %~1"
-    set VS_VER=
-    set VS_YEAR=
+    set CMAKE_TARGET=
+    set VS_PATH=
     exit /B 1
 )
 
