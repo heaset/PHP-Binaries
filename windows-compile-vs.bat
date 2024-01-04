@@ -242,8 +242,8 @@ call :get-extension-zip-from-github "arraydebug"            "%PHP_ARRAYDEBUG_VER
 call :get-extension-zip-from-github "encoding"              "%PHP_ENCODING_VER%"              "pmmp"     "ext-encoding"            || exit 1
 
 call :get-extension-zip-from-github "parallel" "%PHP_PARALLEL_VER%" "krakjoe" "parallel" || exit 1
-cd /D ext-parallel
-nmake VC >>"%log_file%" 2>&1 || call :pm-fatal-error "Error compiling parallel extension"
+cd /D parallel
+nmake >>"%log_file%" 2>&1 || call :pm-fatal-error "Error compiling parallel extension"
 copy %MSBUILD_CONFIGURATION%\php_parallel.pdb "%DEPS_DIR%\bin\php_parallel.pdb" >>"%log_file%" 2>&1 || exit 1
 copy php_parallel.dll "%DEPS_DIR%\bin\php_parallel.dll" >>"%log_file%" 2>&1 || exit 1
 cd /D ..
